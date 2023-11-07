@@ -7,6 +7,8 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
+-- {-# OPTIONS_GHC -fspecialise-aggressively #-}
+
 -----------------------------------------------------------------------------
 
 -----------------------------------------------------------------------------
