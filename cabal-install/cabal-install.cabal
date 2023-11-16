@@ -237,7 +237,8 @@ library
         semaphore-compat >= 1.0.0 && < 1.1,
         specialist
 
-    ghc-options: -fplugin=GHC.Specialist
+    ghc-options:
+      -fplugin=GHC.Specialist
 
     if flag(native-dns)
       if os(windows)
@@ -265,7 +266,10 @@ executable cabal
     hs-source-dirs: main
     default-language: Haskell2010
 
-    ghc-options: -rtsopts -threaded -fplugin=GHC.Specialist
+    ghc-options:
+      -rtsopts
+      -threaded
+      -fplugin=GHC.Specialist
 
     -- On AIX, some legacy BSD operations such as flock(2) are provided by libbsd.a
     if os(aix)
