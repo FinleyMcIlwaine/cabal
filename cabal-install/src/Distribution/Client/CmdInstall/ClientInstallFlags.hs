@@ -113,7 +113,7 @@ clientInstallOptions _ =
       $ reqArg "DIR" (succeedReadE Flag) flagToList
   ]
 
-parsecInstallMethod :: CabalParsing m => m InstallMethod
+parsecInstallMethod :: ParsecParser InstallMethod
 parsecInstallMethod = do
   name <- P.munch1 isAlpha
   case name of

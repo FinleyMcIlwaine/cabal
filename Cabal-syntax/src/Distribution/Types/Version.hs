@@ -110,10 +110,10 @@ instance Parsec Version where
 -- | An integral without leading zeroes.
 --
 -- @since 3.0
-versionDigitParser :: CabalParsing m => m Int
+versionDigitParser :: ParsecParser Int
 versionDigitParser = (some d >>= toNumber) P.<?> "version digit (integral without leading zeroes)"
   where
-    toNumber :: CabalParsing m => [Int] -> m Int
+    toNumber :: [Int] -> ParsecParser Int
     toNumber [0] = return 0
     toNumber (0 : _) = P.unexpected "Version digit with leading zero"
     toNumber xs

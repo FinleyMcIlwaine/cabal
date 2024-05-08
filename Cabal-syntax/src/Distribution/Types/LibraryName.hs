@@ -42,7 +42,7 @@ prettyLibraryNameComponent :: LibraryName -> Disp.Doc
 prettyLibraryNameComponent LMainLibName = Disp.text "lib"
 prettyLibraryNameComponent (LSubLibName str) = Disp.text "lib:" <<>> pretty str
 
-parsecLibraryNameComponent :: CabalParsing m => m LibraryName
+parsecLibraryNameComponent :: ParsecParser LibraryName
 parsecLibraryNameComponent = do
   _ <- P.string "lib"
   parseComposite <|> parseSingle

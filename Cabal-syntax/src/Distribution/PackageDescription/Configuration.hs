@@ -108,7 +108,7 @@ simplifyWithSysParams os arch cinfo cond = (cond', flags)
 --
 
 -- | Parse a configuration condition from a string.
-parseCondition :: CabalParsing m => m (Condition ConfVar)
+parseCondition :: ParsecParser (Condition ConfVar)
 parseCondition = condOr
   where
     condOr = sepByNonEmpty condAnd (oper "||") >>= return . foldl1 COr

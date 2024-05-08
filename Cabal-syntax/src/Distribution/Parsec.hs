@@ -18,14 +18,14 @@ module Distribution.Parsec
   , eitherParsec
   , explicitEitherParsec
   , explicitEitherParsec'
-
-    -- * CabalParsing and diagnostics
-  , CabalParsing (..)
+  , parsecHaskellString
+  , askCabalSpecVersion
 
     -- ** Warnings
   , PWarnType (..)
   , PWarning (..)
   , showPWarning
+  , parsecWarning
 
     -- ** Errors
   , PError (..)
@@ -79,23 +79,13 @@ import qualified Text.Parsec as Parsec
 --
 -- For parsing @.cabal@ like file structure, see "Distribution.Fields".
 class Parsec a where
-  parsec :: CabalParsing m => m a
+  parsec :: ParsecParser a
 
--- | Parsing class which
---
--- * can report Cabal parser warnings.
---
--- * knows @cabal-version@ we work with
-class (P.CharParsing m, MonadPlus m, Fail.MonadFail m) => CabalParsing m where
-  parsecWarning :: PWarnType -> String -> m ()
-
-  parsecHaskellString :: m String
-  parsecHaskellString = stringLiteral
-
-  askCabalSpecVersion :: m CabalSpecVersion
+parsecHaskellString :: ParsecParser String
+parsecHaskellString = stringLiteral
 
 -- | 'parsec' /could/ consume trailing spaces, this function /will/ consume.
-lexemeParsec :: (CabalParsing m, Parsec a) => m a
+lexemeParsec :: Parsec a => ParsecParser a
 lexemeParsec = parsec <* P.spaces
 
 newtype ParsecParser a = PP
@@ -172,12 +162,14 @@ instance P.CharParsing ParsecParser where
   anyChar = liftParsec P.anyChar
   string = liftParsec . P.string
 
-instance CabalParsing ParsecParser where
-  parsecWarning t w = liftParsec $ do
-    spos <- Parsec.getPosition
-    Parsec.modifyState
-      (PWarning t (Position (Parsec.sourceLine spos) (Parsec.sourceColumn spos)) w :)
-  askCabalSpecVersion = PP pure
+parsecWarning :: PWarnType -> String -> ParsecParser ()
+parsecWarning t w = liftParsec $ do
+  spos <- Parsec.getPosition
+  Parsec.modifyState
+    (PWarning t (Position (Parsec.sourceLine spos) (Parsec.sourceColumn spos)) w :)
+
+askCabalSpecVersion :: ParsecParser CabalSpecVersion
+askCabalSpecVersion = PP pure
 
 -- | Parse a 'String' with 'lexemeParsec'.
 simpleParsec :: Parsec a => String -> Maybe a
@@ -261,14 +253,14 @@ instance Parsec Bool where
             "Boolean values are case sensitive, use 'True' or 'False'."
 
 -- | @[^ ,]@
-parsecToken :: CabalParsing m => m String
+parsecToken :: ParsecParser String
 parsecToken = parsecHaskellString <|> ((P.munch1 (\x -> not (isSpace x) && x /= ',') P.<?> "identifier") >>= checkNotDoubleDash)
 
 -- | @[^ ]@
-parsecToken' :: CabalParsing m => m String
+parsecToken' :: ParsecParser String
 parsecToken' = parsecHaskellString <|> ((P.munch1 (not . isSpace) P.<?> "token") >>= checkNotDoubleDash)
 
-checkNotDoubleDash :: CabalParsing m => String -> m String
+checkNotDoubleDash :: String -> ParsecParser String
 checkNotDoubleDash s = do
   when (s == "--") $
     parsecWarning PWTDoubleDash $
@@ -280,11 +272,11 @@ checkNotDoubleDash s = do
 
   return s
 
-parsecFilePath :: CabalParsing m => m FilePath
+parsecFilePath :: ParsecParser FilePath
 parsecFilePath = parsecToken
 
 -- | Parse a benchmark/test-suite types.
-parsecStandard :: (CabalParsing m, Parsec ver) => (ver -> String -> a) -> m a
+parsecStandard :: Parsec ver => (ver -> String -> a) -> ParsecParser a
 parsecStandard f = do
   cs <- some $ P.try (component <* P.char '-')
   ver <- parsec
@@ -298,10 +290,10 @@ parsecStandard f = do
 -- each component must contain an alphabetic character, to avoid
 -- ambiguity in identifiers like foo-1 (the 1 is the version number).
 
-parsecCommaList :: CabalParsing m => m a -> m [a]
+parsecCommaList :: ParsecParser a -> ParsecParser [a]
 parsecCommaList p = P.sepBy (p <* P.spaces) (P.char ',' *> P.spaces P.<?> "comma")
 
-parsecCommaNonEmpty :: CabalParsing m => m a -> m (NonEmpty a)
+parsecCommaNonEmpty :: ParsecParser a -> ParsecParser (NonEmpty a)
 parsecCommaNonEmpty p = P.sepByNonEmpty (p <* P.spaces) (P.char ',' *> P.spaces P.<?> "comma")
 
 -- | Like 'parsecCommaList' but accept leading or trailing comma.
@@ -311,7 +303,7 @@ parsecCommaNonEmpty p = P.sepByNonEmpty (p <* P.spaces) (P.char ',' *> P.spaces 
 -- (comma p)*    -- leading comma
 -- (p comma)*    -- trailing comma
 -- @
-parsecLeadingCommaList :: CabalParsing m => m a -> m [a]
+parsecLeadingCommaList :: ParsecParser a -> ParsecParser [a]
 parsecLeadingCommaList p = do
   c <- P.optional comma
   case c of
@@ -324,7 +316,7 @@ parsecLeadingCommaList p = do
 -- |
 --
 -- @since 3.4.0.0
-parsecLeadingCommaNonEmpty :: CabalParsing m => m a -> m (NonEmpty a)
+parsecLeadingCommaNonEmpty :: ParsecParser a -> ParsecParser (NonEmpty a)
 parsecLeadingCommaNonEmpty p = do
   c <- P.optional comma
   case c of
@@ -334,7 +326,7 @@ parsecLeadingCommaNonEmpty p = do
     lp = p <* P.spaces
     comma = P.char ',' *> P.spaces P.<?> "comma"
 
-parsecOptCommaList :: CabalParsing m => m a -> m [a]
+parsecOptCommaList :: ParsecParser a -> ParsecParser [a]
 parsecOptCommaList p = P.sepBy (p <* P.spaces) (P.optional comma)
   where
     comma = P.char ',' *> P.spaces
@@ -352,7 +344,7 @@ parsecOptCommaList p = P.sepBy (p <* P.spaces) (P.optional comma)
 -- @
 --
 -- @since 3.0.0.0
-parsecLeadingOptCommaList :: CabalParsing m => m a -> m [a]
+parsecLeadingOptCommaList :: ParsecParser a -> ParsecParser [a]
 parsecLeadingOptCommaList p = do
   c <- P.optional comma
   case c of
@@ -370,14 +362,14 @@ parsecLeadingOptCommaList p = do
         Just _ -> (x :) <$> P.sepEndBy lp comma
 
 -- | Content isn't unquoted
-parsecQuoted :: CabalParsing m => m a -> m a
+parsecQuoted :: ParsecParser a -> ParsecParser a
 parsecQuoted = P.between (P.char '"') (P.char '"')
 
 -- | @parsecMaybeQuoted p = 'parsecQuoted' p <|> p@.
-parsecMaybeQuoted :: CabalParsing m => m a -> m a
+parsecMaybeQuoted :: ParsecParser a -> ParsecParser a
 parsecMaybeQuoted p = parsecQuoted p <|> p
 
-parsecUnqualComponentName :: forall m. CabalParsing m => m String
+parsecUnqualComponentName :: ParsecParser String
 parsecUnqualComponentName = state0 DList.empty
   where
     --
@@ -412,7 +404,7 @@ parsecUnqualComponentName = state0 DList.empty
     --     putPretty $ fromTM re
     -- @
 
-    state0 :: DList.DList Char -> m String
+    state0 :: DList.DList Char -> ParsecParser String
     state0 acc = do
       c <- ch -- <|> fail ("Invalid component, after " ++ DList.toList acc)
       case () of
@@ -422,10 +414,10 @@ parsecUnqualComponentName = state0 DList.empty
           | c == '-' -> fail ("Empty component, after " ++ DList.toList acc)
           | otherwise -> fail ("Internal error, after " ++ DList.toList acc)
 
-    state1 :: DList.DList Char -> m String
+    state1 :: DList.DList Char -> ParsecParser String
     state1 acc = state1' acc `alt` return (DList.toList acc)
 
-    state1' :: DList.DList Char -> m String
+    state1' :: DList.DList Char -> ParsecParser String
     state1' acc = do
       c <- ch
       case () of
@@ -434,79 +426,79 @@ parsecUnqualComponentName = state0 DList.empty
           | c == '-' -> state0 (DList.snoc acc c)
           | otherwise -> fail ("Internal error, after " ++ DList.toList acc)
 
-    ch :: m Char
+    ch :: ParsecParser Char
     !ch = P.satisfy (\c -> isAlphaNum c || c == '-')
 
-    alt :: m String -> m String -> m String
+    alt :: ParsecParser String -> ParsecParser String -> ParsecParser String
     !alt = (<|>)
 
-stringLiteral :: forall m. P.CharParsing m => m String
+stringLiteral :: ParsecParser String
 stringLiteral = lit
   where
-    lit :: m String
+    lit :: ParsecParser String
     lit =
       foldr (maybe id (:)) ""
         <$> P.between (P.char '"') (P.char '"' P.<?> "end of string") (many stringChar)
         P.<?> "string"
 
-    stringChar :: m (Maybe Char)
+    stringChar :: ParsecParser (Maybe Char)
     stringChar =
       Just <$> stringLetter
         <|> stringEscape
         P.<?> "string character"
 
-    stringLetter :: m Char
+    stringLetter :: ParsecParser Char
     stringLetter = P.satisfy (\c -> (c /= '"') && (c /= '\\') && (c > '\026'))
 
-    stringEscape :: m (Maybe Char)
+    stringEscape :: ParsecParser (Maybe Char)
     stringEscape = P.char '\\' *> esc
       where
-        esc :: m (Maybe Char)
+        esc :: ParsecParser (Maybe Char)
         esc =
           Nothing <$ escapeGap
             <|> Nothing <$ escapeEmpty
             <|> Just <$> escapeCode
 
-    escapeEmpty, escapeGap :: m Char
+    escapeEmpty, escapeGap :: ParsecParser Char
     escapeEmpty = P.char '&'
     escapeGap = P.skipSpaces1 *> (P.char '\\' P.<?> "end of string gap")
 
-escapeCode :: forall m. P.CharParsing m => m Char
+escapeCode :: ParsecParser Char
 escapeCode = (charEsc <|> charNum <|> charAscii <|> charControl) P.<?> "escape code"
   where
-    charControl, charNum :: m Char
+    charControl, charNum :: ParsecParser Char
     charControl = (\c -> toEnum (fromEnum c - fromEnum '@')) <$> (P.char '^' *> (P.upper <|> P.char '@'))
     charNum = toEnum <$> num
       where
-        num :: m Int
+        num :: ParsecParser Int
         num =
           bounded 10 maxchar
             <|> (P.char 'o' *> bounded 8 maxchar)
             <|> (P.char 'x' *> bounded 16 maxchar)
         maxchar = fromEnum (maxBound :: Char)
 
-    bounded :: Int -> Int -> m Int
+    bounded :: Int -> Int -> ParsecParser Int
     bounded base bnd =
       foldl' (\x d -> base * x + digitToInt d) 0
         <$> bounded' (take base thedigits) (map digitToInt $ showIntAtBase base intToDigit bnd "")
       where
-        thedigits :: [m Char]
+        thedigits :: [ParsecParser Char]
         thedigits = map P.char ['0' .. '9'] ++ map P.oneOf (transpose [['A' .. 'F'], ['a' .. 'f']])
 
-        toomuch :: m a
+        toomuch :: ParsecParser a
         toomuch = P.unexpected "out-of-range numeric escape sequence"
 
-        bounded', bounded'' :: [m Char] -> [Int] -> m [Char]
+        bounded', bounded'' :: [ParsecParser Char] -> [Int] -> ParsecParser [Char]
         bounded' dps@(zero : _) bds =
           P.skipSome zero *> ([] <$ P.notFollowedBy (P.choice dps) <|> bounded'' dps bds)
             <|> bounded'' dps bds
         bounded' [] _ = error "bounded called with base 0"
         bounded'' dps [] = [] <$ P.notFollowedBy (P.choice dps) <|> toomuch
         bounded'' dps (bd : bds) =
-          let anyd :: m Char
+          let anyd :: ParsecParser Char
               anyd = P.choice dps
 
-              nomore :: m ()
+              nomore :: ParsecParser ()
               nomore = P.notFollowedBy anyd <|> toomuch
 
               (low, ex, high) = case splitAt bd dps of
@@ -521,13 +513,13 @@ escapeCode = (charEsc <|> charNum <|> charAscii <|> charControl) P.<?> "escape c
           | n <= 0 = pure []
           | otherwise = ((:) <$> p <*> atMost (n - 1) p) <|> pure []
 
-    charEsc :: m Char
+    charEsc :: ParsecParser Char
     charEsc = P.choice $ parseEsc <$> escMap
 
     parseEsc (c, code) = code <$ P.char c
     escMap = zip "abfnrtv\\\"\'" "\a\b\f\n\r\t\v\\\"\'"
 
-    charAscii :: m Char
+    charAscii :: ParsecParser Char
     charAscii = P.choice $ parseAscii <$> asciiMap
 
     parseAscii (asc, code) = P.try $ code <$ P.string asc

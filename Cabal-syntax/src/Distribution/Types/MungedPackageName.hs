@@ -136,7 +136,7 @@ zdashcode s = go s (Nothing :: Maybe Int) []
     go ('z' : z) (Just n) r = go z (Just (n + 1)) ('z' : r)
     go (c : z) _ r = go z Nothing (c : r)
 
-parseZDashCode :: CabalParsing m => m [String]
+parseZDashCode :: ParsecParser [String]
 parseZDashCode = do
   ns <- toList <$> P.sepByNonEmpty (some (P.satisfy (/= '-'))) (P.char '-')
   return (go ns)

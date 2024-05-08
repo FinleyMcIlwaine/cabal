@@ -102,12 +102,11 @@ instance Parsec ModuleRenaming where
           P.space *> fail "space after parenthesis, use cabal-version: 3.0 or higher"
 
 moduleRenamingParsec
-  :: CabalParsing m
-  => (forall a. m a -> m a)
+  :: (forall a. ParsecParser a -> ParsecParser a)
   -- ^ between parens
-  -> m ModuleName
+  -> ParsecParser ModuleName
   -- ^ module name parser
-  -> m ModuleRenaming
+  -> ParsecParser ModuleRenaming
 moduleRenamingParsec bp mn =
   -- NB: try not necessary as the first token is obvious
   P.choice [parseRename, parseHiding, return DefaultRenaming]

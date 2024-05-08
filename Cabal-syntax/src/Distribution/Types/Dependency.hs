@@ -158,7 +158,7 @@ instance Parsec Dependency where
           (spaces *> char '}')
           (NES.fromNonEmpty <$> parsecCommaNonEmpty parseLib)
 
-versionGuardMultilibs :: CabalParsing m => m ()
+versionGuardMultilibs :: ParsecParser ()
 versionGuardMultilibs = do
   csv <- askCabalSpecVersion
   when (csv < CabalSpecV3_0) $

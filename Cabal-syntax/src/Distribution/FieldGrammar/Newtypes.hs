@@ -96,8 +96,8 @@ data NoCommaFSep = NoCommaFSep
 class Sep sep where
   prettySep :: Proxy sep -> [Doc] -> Doc
 
-  parseSep :: CabalParsing m => Proxy sep -> m a -> m [a]
-  parseSepNE :: CabalParsing m => Proxy sep -> m a -> m (NonEmpty a)
+  parseSep :: Proxy sep -> ParsecParser a -> ParsecParser [a]
+  parseSepNE :: Proxy sep -> ParsecParser a -> ParsecParser (NonEmpty a)
 
 instance Sep CommaVCat where
   prettySep _ = vcat . punctuate comma
@@ -449,7 +449,7 @@ instance Pretty TestedWith where
   pretty x = case unpack x of
     (compiler, vr) -> pretty compiler <+> pretty vr
 
-parsecTestedWith :: CabalParsing m => m (CompilerFlavor, VersionRange)
+parsecTestedWith :: ParsecParser (CompilerFlavor, VersionRange)
 parsecTestedWith = do
   name <- lexemeParsec
   ver <- parsec <|> pure anyVersion

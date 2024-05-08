@@ -33,7 +33,7 @@ parseWithoutProjectTargetSelector verbosity input =
       Just uri -> return (WoURI uri)
       Nothing -> dieWithException verbosity $ ProjectTargetSelector input err
   where
-    parser :: CabalParsing m => m WithoutProjectTargetSelector
+    parser :: ParsecParser WithoutProjectTargetSelector
     parser = do
       pid <- parsec
       cn <- optional (char ':' *> parsec)

@@ -77,7 +77,7 @@ instance Parsec PkgconfigVersionRange where
       else versionRangeToPkgconfigVersionRange <$> versionRangeParser P.integral csv
 
 -- "modern" parser of @pkg-config@ package versions.
-pkgconfigParser :: CabalParsing m => m PkgconfigVersionRange
+pkgconfigParser :: ParsecParser PkgconfigVersionRange
 pkgconfigParser = P.spaces >> expr
   where
     -- every parser here eats trailing space

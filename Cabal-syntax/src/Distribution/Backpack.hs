@@ -228,7 +228,7 @@ dispOpenModuleSubstEntry (k, v) = pretty k <<>> Disp.char '=' <<>> pretty v
 -- | Inverse to 'dispModSubst'.
 --
 -- @since 2.2
-parsecOpenModuleSubst :: CabalParsing m => m OpenModuleSubst
+parsecOpenModuleSubst :: ParsecParser OpenModuleSubst
 parsecOpenModuleSubst =
   fmap Map.fromList
     . flip P.sepBy (P.char ',')
@@ -237,7 +237,7 @@ parsecOpenModuleSubst =
 -- | Inverse to 'dispModSubstEntry'.
 --
 -- @since 2.2
-parsecOpenModuleSubstEntry :: CabalParsing m => m (ModuleName, OpenModule)
+parsecOpenModuleSubstEntry :: ParsecParser (ModuleName, OpenModule)
 parsecOpenModuleSubstEntry =
   do
     k <- parsec

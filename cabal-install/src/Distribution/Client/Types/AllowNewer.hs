@@ -102,13 +102,13 @@ instance Parsec RelaxedDep where
   parsec = P.char '*' *> relaxedDepStarP <|> (parsec >>= relaxedDepPkgidP)
 
 -- continuation after *
-relaxedDepStarP :: CabalParsing m => m RelaxedDep
+relaxedDepStarP :: ParsecParser RelaxedDep
 relaxedDepStarP =
   RelaxedDep RelaxDepScopeAll <$ P.char ':' <*> modP <*> parsec
     <|> pure (RelaxedDep RelaxDepScopeAll RelaxDepModNone RelaxDepSubjectAll)
 
 -- continuation after package identifier
-relaxedDepPkgidP :: CabalParsing m => PackageIdentifier -> m RelaxedDep
+relaxedDepPkgidP :: PackageIdentifier -> ParsecParser RelaxedDep
 relaxedDepPkgidP pid@(PackageIdentifier pn v)
   | pn == mkPackageName "all"
   , v == nullVersion =

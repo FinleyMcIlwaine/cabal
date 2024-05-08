@@ -199,7 +199,7 @@ instance Parsec Verbosity where
 instance Pretty Verbosity where
   pretty = PP.text . showForCabal
 
-parsecVerbosity :: CabalParsing m => m Verbosity
+parsecVerbosity :: ParsecParser Verbosity
 parsecVerbosity = parseIntVerbosity <|> parseStringVerbosity
   where
     parseIntVerbosity = do

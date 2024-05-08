@@ -326,7 +326,7 @@ buildPlatform = Platform buildArch buildOS
 
 -- Utils:
 
-parsecIdent :: CabalParsing m => m String
+parsecIdent :: ParsecParser String
 parsecIdent = (:) <$> firstChar <*> rest
   where
     firstChar = P.satisfy isAlpha

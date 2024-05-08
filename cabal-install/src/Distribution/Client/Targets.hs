@@ -693,7 +693,7 @@ instance Parsec UserConstraint where
         ]
     return (UserConstraint scope prop)
     where
-      parseConstraintScope :: forall m. CabalParsing m => m UserConstraintScope
+      parseConstraintScope :: ParsecParser UserConstraintScope
       parseConstraintScope = do
         pn <- parsec
         P.choice

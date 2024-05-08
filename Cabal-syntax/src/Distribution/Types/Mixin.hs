@@ -68,7 +68,7 @@ instance Parsec Mixin where
     incl <- parsec
     return (mkMixin pn ln incl)
 
-versionGuardMultilibs :: CabalParsing m => m ()
+versionGuardMultilibs :: ParsecParser ()
 versionGuardMultilibs = do
   csv <- askCabalSpecVersion
   when (csv < CabalSpecV3_4) $
