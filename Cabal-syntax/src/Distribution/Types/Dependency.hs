@@ -139,6 +139,7 @@ instance Pretty Dependency where
 -- >>> map (`simpleParsec'` "mylib:sub") [CabalSpecV2_4, CabalSpecV3_0] :: [Maybe Dependency]
 -- [Nothing,Just (Dependency (PackageName "mylib") (OrLaterVersion (mkVersion [0])) (fromNonEmpty (LSubLibName (UnqualComponentName "sub") :| [])))]
 instance Parsec Dependency where
+  {-# SPECIALIZE parsec :: ParsecParser Dependency #-}
   parsec = do
     name <- parsec
 

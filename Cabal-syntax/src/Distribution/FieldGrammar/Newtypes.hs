@@ -104,6 +104,7 @@ instance Sep CommaVCat where
   parseSep _ p = do
     v <- askCabalSpecVersion
     if v >= CabalSpecV2_2 then parsecLeadingCommaList p else parsecCommaList p
+  {-# SPECIALIZE parseSep :: Proxy CommaVCat -> ParsecParser a -> ParsecParser [a] #-}
   parseSepNE _ p = do
     v <- askCabalSpecVersion
     if v >= CabalSpecV2_2 then parsecLeadingCommaNonEmpty p else parsecCommaNonEmpty p
@@ -154,6 +155,7 @@ alaList' _ _ = List
 instance Newtype [a] (List sep wrapper a)
 
 instance (Newtype a b, Sep sep, Parsec b) => Parsec (List sep b a) where
+  {-# SPECIALIZE parsec :: (Newtype a b, Sep sep, Parsec b) => ParsecParser (List sep b a) #-}
   parsec = pack . map (unpack :: b -> a) <$> parseSep (Proxy :: Proxy sep) parsec
 
 instance (Newtype a b, Sep sep, Pretty b) => Pretty (List sep b a) where

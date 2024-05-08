@@ -68,6 +68,7 @@ module Distribution.FieldGrammar.Parsec
 
 import Distribution.Compat.Newtype
 import Distribution.Compat.Prelude
+import Distribution.Compat.Lens (ALens')
 import Distribution.Utils.Generic (fromUTF8BS)
 import Distribution.Utils.String (trim)
 import Prelude ()
@@ -195,6 +196,7 @@ instance FieldGrammar Parsec ParsecFieldGrammar where
         | null fls = pure Nothing
         | otherwise = Just . unpack' _pack <$> runFieldParser pos parsec v fls
 
+  {-# SPECIALIZE optionalFieldDefAla :: (Parsec b, Newtype a b, Eq a) => FieldName -> (a -> b) -> ALens' s a -> a -> ParsecFieldGrammar s a #-}
   optionalFieldDefAla fn _pack _extract def = ParsecFG (Set.singleton fn) Set.empty parser
     where
       parser v fields = case Map.lookup fn fields of
@@ -257,6 +259,7 @@ instance FieldGrammar Parsec ParsecFieldGrammar where
           | v >= CabalSpecV3_0 -> pure (ShortText.toShortText $ fieldlinesToFreeText3 pos fls)
           | otherwise -> pure (ShortText.toShortText $ fieldlinesToFreeText fls)
 
+  {-# SPECIALIZE monoidalFieldAla :: (Newtype a b, Monoid a, Parsec b) => FieldName -> (a -> b) -> ALens' s a -> ParsecFieldGrammar s a #-}
   monoidalFieldAla fn _pack _extract = ParsecFG (Set.singleton fn) Set.empty parser
     where
       parser v fields = case Map.lookup fn fields of

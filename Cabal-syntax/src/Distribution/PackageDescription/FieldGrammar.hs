@@ -157,6 +157,8 @@ packageDescriptionFieldGrammar =
         <$> monoidalFieldAla "license-file" CompatLicenseFile L.licenseFiles
         <*> monoidalFieldAla "license-files" (alaList' FSep RelativePathNT) L.licenseFiles
           ^^^ hiddenField
+{-# SPECIALIZE packageDescriptionFieldGrammar :: ParsecFieldGrammar' PackageDescription #-}
+{-# SPECIALIZE packageDescriptionFieldGrammar :: PrettyFieldGrammar' PackageDescription #-}
 
 -------------------------------------------------------------------------------
 -- Library
@@ -358,6 +360,8 @@ testSuiteFieldGrammar =
     <*> blurFieldGrammar testStanzaBuildInfo buildInfoFieldGrammar
     <*> monoidalFieldAla "code-generators" (alaList' CommaFSep Token) testStanzaCodeGenerators
       ^^^ availableSince CabalSpecV3_8 []
+{-# SPECIALIZE testSuiteFieldGrammar :: ParsecFieldGrammar' TestSuiteStanza #-}
+{-# SPECIALIZE testSuiteFieldGrammar :: PrettyFieldGrammar' TestSuiteStanza #-}
 
 validateTestSuite :: CabalSpecVersion -> Position -> TestSuiteStanza -> ParseResult TestSuite
 validateTestSuite cabalSpecVersion pos stanza = case testSuiteType of
@@ -500,6 +504,8 @@ benchmarkFieldGrammar =
     <*> optionalFieldAla "main-is" RelativePathNT benchmarkStanzaMainIs
     <*> optionalField "benchmark-module" benchmarkStanzaBenchmarkModule
     <*> blurFieldGrammar benchmarkStanzaBuildInfo buildInfoFieldGrammar
+{-# SPECIALIZE benchmarkFieldGrammar :: ParsecFieldGrammar' BenchmarkStanza #-}
+{-# SPECIALIZE benchmarkFieldGrammar :: PrettyFieldGrammar' BenchmarkStanza #-}
 
 validateBenchmark :: CabalSpecVersion -> Position -> BenchmarkStanza -> ParseResult Benchmark
 validateBenchmark cabalSpecVersion pos stanza = case benchmarkStanzaType of

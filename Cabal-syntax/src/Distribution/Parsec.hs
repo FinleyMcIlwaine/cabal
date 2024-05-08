@@ -298,9 +298,11 @@ parsecStandard f = do
 -- each component must contain an alphabetic character, to avoid
 -- ambiguity in identifiers like foo-1 (the 1 is the version number).
 
+{-# SPECIALIZE parsecCommaList :: ParsecParser a -> ParsecParser [a] #-}
 parsecCommaList :: CabalParsing m => m a -> m [a]
 parsecCommaList p = P.sepBy (p <* P.spaces) (P.char ',' *> P.spaces P.<?> "comma")
 
+{-# SPECIALIZE parsecCommaNonEmpty :: ParsecParser a -> ParsecParser (NonEmpty a) #-}
 parsecCommaNonEmpty :: CabalParsing m => m a -> m (NonEmpty a)
 parsecCommaNonEmpty p = P.sepByNonEmpty (p <* P.spaces) (P.char ',' *> P.spaces P.<?> "comma")
 
@@ -311,6 +313,7 @@ parsecCommaNonEmpty p = P.sepByNonEmpty (p <* P.spaces) (P.char ',' *> P.spaces 
 -- (comma p)*    -- leading comma
 -- (p comma)*    -- trailing comma
 -- @
+{-# SPECIALIZE parsecLeadingCommaList :: ParsecParser a -> ParsecParser [a] #-}
 parsecLeadingCommaList :: CabalParsing m => m a -> m [a]
 parsecLeadingCommaList p = do
   c <- P.optional comma
@@ -324,6 +327,7 @@ parsecLeadingCommaList p = do
 -- |
 --
 -- @since 3.4.0.0
+{-# SPECIALIZE parsecLeadingCommaNonEmpty :: ParsecParser a -> ParsecParser (NonEmpty a) #-}
 parsecLeadingCommaNonEmpty :: CabalParsing m => m a -> m (NonEmpty a)
 parsecLeadingCommaNonEmpty p = do
   c <- P.optional comma
@@ -334,6 +338,7 @@ parsecLeadingCommaNonEmpty p = do
     lp = p <* P.spaces
     comma = P.char ',' *> P.spaces P.<?> "comma"
 
+{-# SPECIALIZE parsecOptCommaList :: ParsecParser a -> ParsecParser [a] #-}
 parsecOptCommaList :: CabalParsing m => m a -> m [a]
 parsecOptCommaList p = P.sepBy (p <* P.spaces) (P.optional comma)
   where
@@ -352,6 +357,7 @@ parsecOptCommaList p = P.sepBy (p <* P.spaces) (P.optional comma)
 -- @
 --
 -- @since 3.0.0.0
+{-# SPECIALIZE parsecLeadingOptCommaList :: ParsecParser a -> ParsecParser [a] #-}
 parsecLeadingOptCommaList :: CabalParsing m => m a -> m [a]
 parsecLeadingOptCommaList p = do
   c <- P.optional comma

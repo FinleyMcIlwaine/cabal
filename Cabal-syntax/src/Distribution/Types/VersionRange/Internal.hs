@@ -332,6 +332,7 @@ prettyVersionRange16 vr = prettyVersionRange vr
 -- >>> map (`simpleParsecW'` "== 1.2.*") [CabalSpecV1_4, CabalSpecV1_6] :: [Maybe VersionRange]
 -- [Nothing,Just (IntersectVersionRanges (OrLaterVersion (mkVersion [1,2])) (EarlierVersion (mkVersion [1,3])))]
 instance Parsec VersionRange where
+  {-# SPECIALIZE parsec :: ParsecParser VersionRange #-}
   parsec = askCabalSpecVersion >>= versionRangeParser versionDigitParser
 
 -- | 'VersionRange' parser parametrised by version digit parser.
@@ -534,6 +535,7 @@ versionRangeParser digitParser csv = expr
       case ts of
         [] -> pure ()
         (_ : _) -> parsecWarning PWTVersionTag "version with tags"
+{-# SPECIALIZE versionRangeParser :: ParsecParser Int -> CabalSpecVersion -> ParsecParser VersionRange #-}
 
 ----------------------------
 -- Wildcard range utilities

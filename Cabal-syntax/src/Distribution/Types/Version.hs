@@ -127,6 +127,7 @@ versionDigitParser = (some d >>= toNumber) P.<?> "version digit (integral withou
     d :: P.CharParsing m => m Int
     d = f <$> P.satisfyRange '0' '9'
     f c = ord c - ord '0'
+{-# SPECIALIZE versionDigitParser :: ParsecParser Int #-}
 
 -- | Construct 'Version' from list of version number components.
 --

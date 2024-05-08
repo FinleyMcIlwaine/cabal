@@ -46,6 +46,7 @@ instance Monad m => Parsec.Stream FieldLineStream m Char where
     -- as lines are glued with '\n', we return '\n' here!
     Nothing -> Just ('\n', s)
     Just (c, bs') -> Just (unconsChar c bs' (\bs'' -> FLSCons bs'' s) s)
+  {-# SPECIALIZE instance Parsec.Stream FieldLineStream Identity Char #-}
 
 -- Based on implementation 'decodeStringUtf8'
 unconsChar :: forall a. Word8 -> ByteString -> (ByteString -> a) -> a -> (Char, a)
