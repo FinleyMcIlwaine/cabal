@@ -298,6 +298,7 @@ parsecStandard f = do
 -- each component must contain an alphabetic character, to avoid
 -- ambiguity in identifiers like foo-1 (the 1 is the version number).
 
+{-# INLINABLE parsecCommaList #-}
 parsecCommaList :: CabalParsing m => m a -> m [a]
 parsecCommaList p = P.sepBy (p <* P.spaces) (P.char ',' *> P.spaces P.<?> "comma")
 
@@ -377,6 +378,7 @@ parsecQuoted = P.between (P.char '"') (P.char '"')
 parsecMaybeQuoted :: CabalParsing m => m a -> m a
 parsecMaybeQuoted p = parsecQuoted p <|> p
 
+{-# SPECIALIZE parsecUnqualComponentName :: ParsecParser String #-}
 parsecUnqualComponentName :: forall m. CabalParsing m => m String
 parsecUnqualComponentName = state0 DList.empty
   where

@@ -157,6 +157,8 @@ packageDescriptionFieldGrammar =
         <$> monoidalFieldAla "license-file" CompatLicenseFile L.licenseFiles
         <*> monoidalFieldAla "license-files" (alaList' FSep RelativePathNT) L.licenseFiles
           ^^^ hiddenField
+{-# SPECIALIZE packageDescriptionFieldGrammar :: ParsecFieldGrammar' PackageDescription #-}
+{-# SPECIALIZE packageDescriptionFieldGrammar :: PrettyFieldGrammar' PackageDescription #-}
 
 -------------------------------------------------------------------------------
 -- Library
@@ -907,3 +909,16 @@ _syntaxExtensions =
           | e <- [minBound .. maxBound]
           , e `notElem` [Safe, Unsafe, Trustworthy]
           ]
+
+-- This is tricky. We end up with overloaded calls to 'parsecCommaList' in this
+-- module, particularly at types 'ParsecParser' and 'Identity Dependency' which
+-- we care to specialize. We can't specialize at the definition site of this
+-- function due to module cycles, so we specialize here. To do so, we have to
+-- mark 'parsecCommaList' inlinable, which you'd think would cause the
+-- specialization (for all specializable calls here) to happen, but they don't.
+-- We need this specialize pragma to make it happen, but GHC warns that it is an
+-- orphan rule.
+{-# SPECIALIZE
+      parsecCommaList
+        :: ParsecParser (Identity Dependency) -> ParsecParser [Identity Dependency]
+  #-}

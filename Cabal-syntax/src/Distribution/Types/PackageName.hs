@@ -70,6 +70,7 @@ instance Pretty PackageName where
   pretty = Disp.text . unPackageName
 
 instance Parsec PackageName where
+  {-# SPECIALIZE parsec :: ParsecParser PackageName #-}
   parsec = mkPackageName <$> parsecUnqualComponentName
 
 instance NFData PackageName where

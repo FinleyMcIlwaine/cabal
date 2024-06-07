@@ -99,6 +99,7 @@ instance Pretty Version where
       )
 
 instance Parsec Version where
+  {-# SPECIALIZE parsec :: ParsecParser Version #-}
   parsec = mkVersion <$> toList <$> P.sepByNonEmpty versionDigitParser (P.char '.') <* tags
     where
       tags = do
@@ -110,6 +111,7 @@ instance Parsec Version where
 -- | An integral without leading zeroes.
 --
 -- @since 3.0
+{-# SPECIALIZE versionDigitParser :: ParsecParser Int #-}
 versionDigitParser :: CabalParsing m => m Int
 versionDigitParser = (some d >>= toNumber) P.<?> "version digit (integral without leading zeroes)"
   where

@@ -57,6 +57,7 @@ import Distribution.Compiler (CompilerFlavor)
 import Distribution.License (License)
 import Distribution.Parsec
 import Distribution.Pretty
+import Distribution.Types.Dependency
 import Distribution.Utils.Path
 import Distribution.Version
   ( LowerBound (..)
@@ -101,6 +102,16 @@ class Sep sep where
 
 instance Sep CommaVCat where
   prettySep _ = vcat . punctuate comma
+  {-# SPECIALIZE
+        parseSep
+          :: Proxy CommaVCat
+          -> ParsecParser Dependency
+          -> ParsecParser [Dependency]
+    #-}
+  -- Without this, inlining will beat specialization to the punch and we'll end
+  -- up with an overloaded worker for which the specialization rewrite rule will
+  -- not fire, even with -flate-specialise
+  {-# INLINE[2] parseSep #-}
   parseSep _ p = do
     v <- askCabalSpecVersion
     if v >= CabalSpecV2_2 then parsecLeadingCommaList p else parsecCommaList p

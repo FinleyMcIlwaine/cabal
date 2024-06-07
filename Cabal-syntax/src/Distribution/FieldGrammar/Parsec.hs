@@ -66,6 +66,7 @@ module Distribution.FieldGrammar.Parsec
   , fieldLinesToStream
   ) where
 
+import Distribution.Compat.Lens (ALens')
 import Distribution.Compat.Newtype
 import Distribution.Compat.Prelude
 import Distribution.Utils.Generic (fromUTF8BS)
@@ -82,11 +83,14 @@ import qualified Text.Parsec.Error as P
 
 import Distribution.CabalSpecVersion
 import Distribution.FieldGrammar.Class
+import Distribution.FieldGrammar.Newtypes
 import Distribution.Fields.Field
 import Distribution.Fields.ParseResult
 import Distribution.Parsec
 import Distribution.Parsec.FieldLineStream
 import Distribution.Parsec.Position (positionCol, positionRow)
+import Distribution.Types.Dependency
+import Distribution.Types.SetupBuildInfo
 
 -------------------------------------------------------------------------------
 -- Auxiliary types
@@ -257,6 +261,18 @@ instance FieldGrammar Parsec ParsecFieldGrammar where
           | v >= CabalSpecV3_0 -> pure (ShortText.toShortText $ fieldlinesToFreeText3 pos fls)
           | otherwise -> pure (ShortText.toShortText $ fieldlinesToFreeText fls)
 
+  {-# SPECIALIZE
+        monoidalFieldAla
+          :: FieldName
+          -> ([Dependency] -> List CommaVCat (Identity Dependency) Dependency)
+          -> ALens' SetupBuildInfo [Dependency]
+          -> ParsecFieldGrammar SetupBuildInfo [Dependency]
+    #-}
+
+  -- Without this, inlining will beat specialization to the punch and we'll end
+  -- up with an overloaded worker for which the specialization rewrite rule will
+  -- not fire, even with -flate-specialise
+  {-# INLINE[2] monoidalFieldAla #-}
   monoidalFieldAla fn _pack _extract = ParsecFG (Set.singleton fn) Set.empty parser
     where
       parser v fields = case Map.lookup fn fields of
